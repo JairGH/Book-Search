@@ -53,21 +53,16 @@ const resolvers = {
       }
       throw new AuthenticationError("You need to be logged in!");
     },
-    removeBook: async (parent, { bookId }, context) => {
-      if (context.user) {
-        const book = await Book.findOneAndDelete({
-          _id: bookId,
-          thoughtAuthor: context.user.username,
-        });
-
-        await User.findOneAndUpdate(
-          { _id: context.user._id },
-          { $pull: { book: book._id } }
-        );
-
-        return book;
+    removeBook: async (parent, args, context) => {
+      const updatedUser = await User.findOneAndUpdate(
+        { _id: context.user._id },
+        { $pull: { savedBooks: { bookId: args.bookId } } },
+        { new: true }
+      );
+      if (!updatedUser) {
+        throw new GraphQLError("error");
       }
-      throw new AuthenticationError("You need to be logged in!");
+      return updatedUser;
     },
   },
 };
